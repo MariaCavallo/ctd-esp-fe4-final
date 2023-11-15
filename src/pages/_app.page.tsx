@@ -10,13 +10,12 @@ function MyApp({ Component, pageProps }: AppProps) {
       <LayoutGeneral>
         <Component {...pageProps} />
       </LayoutGeneral>
-      <style jsx global>{`
-                /* Other global styles such as 'html, body' etc... */
-
-                #__next {
-                  height: 100%;
-                }
-              `}</style>
+      <style jsx global>
+        {`#__next {
+                height: 100%;
+              }
+        `}
+      </style>
     </ThemeProvider>
   )
 }
