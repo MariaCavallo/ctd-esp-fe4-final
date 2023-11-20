@@ -16,7 +16,7 @@ const Header: FC<Props> = ({variant}: Props) => {
     return <Container maxWidth="xl">
         <Toolbar disableGutters sx={{display: "flex", justifyContent: "space-between"}}>
             <Link href="/">
-                <Box sx={{display: "flex", alignContent: "center", alignItems: "center"}}>
+                <Box sx={{display: "flex", alignContent: "center", alignItems: "center", cursor: "pointer"}}>
                     <MUILink variant="h6" sx={{ mr: 1, fontWeight: 700, color: 'inherit', textDecoration: 'none'}}> DH -</MUILink>
                     <Image src="/marvel-logo.png" alt='Logo Marvel' height={50} width={100}/>
                 </Box>
@@ -24,7 +24,7 @@ const Header: FC<Props> = ({variant}: Props) => {
             {variant == 'general' &&
                 <Box>
                     <Link href="/preguntas-frecuentes">
-                        <MUILink variant="body2" sx={{color: 'white', fontSize: 18, fontWeight: 600}}>FAQ</MUILink>
+                        <MUILink variant="body2" sx={{ cursor: "pointer", color: 'white', fontSize: 18, fontWeight: 600}}>FAQ</MUILink>
                     </Link>
                 </Box>
             }

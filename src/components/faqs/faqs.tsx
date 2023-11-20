@@ -10,15 +10,18 @@ interface Props {
 const Faqs: FC<Props> = ({ data }) => {
 
     return (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', margin: "1rem" }}>
+            <Typography variant={"h2"} my={2} textAlign={'center'} fontSize={28} fontWeight={600}>
+                Frequently Asked Questions
+            </Typography>
             {data.map((faq) => (
-                <Accordion key={faq.id}>
+                <Accordion key={faq.id} sx={{ width: "80rem", margin: '2px' }}>
                     <AccordionSummary
                         expandIcon={<ExpandMoreIcon />}
                         aria-controls="panel1a-content"
                         id="panel1a-header"
                     >
-                        <Typography>{faq.question}</Typography>
+                        <Typography fontWeight={600}>{faq.question}</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         <Typography>{faq.answer}</Typography>

@@ -1,5 +1,5 @@
-import Faqs from '../../components/faqs/faqs'
-import { faqsData } from '../../components/faqs/faqsData'
+import Faqs from '../components/faqs/faqs'
+import { faqsData } from '../components/faqs/faqsData'
 import { NextPage } from 'next';
 import React from 'react'
 
