@@ -23,7 +23,7 @@ export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
         props: {
             data: comic,
         },
-        revalidate: 100,
+        revalidate: 10,
     }
 }
 
