@@ -14,39 +14,37 @@ export interface ComicsProps {
     }
 }
 
-interface HomeProps {
-    comicsData: ComicsProps[];
+export interface PaginationProps {
+    offset: number,
+    limit: number,
+    total: number,
+    count: number
 }
 
-const Home: NextPage<HomeProps> = ({ comicsData }) => {
+interface HomeProps {
+    comicsData: ComicsProps[];
+    pagData: PaginationProps;
+}
+
+const Home: NextPage<HomeProps> = ({ comicsData, pagData }) => {
     
-    const [comics, setComics] = useState<ComicsProps[]>([]);
-    const [currentPage, setCurrentPage] = useState(0);
-    const limit = 20;
+    const [comics, setComics] = useState<ComicsProps[]>(comicsData);
+    const [page, setPage] = useState(1);
     
-//TODO ---------   Arreglar paginacion    ---------------
-    const handlePageChange = async (offset: number, limit: number) => {
-        try{
-            const response = await getComics(offset, limit);
-            setComics(response.data.results);
-            setCurrentPage(offset / limit);
-        } catch (error) {
-            console.log('Error al obtener comics:',error);
-        }
+    const handlePageChange = async (page: number) => {
+        const offset = (page - 1) * 12;
+        const newComicsData = await getComics(offset, pagData.limit);
+        setComics(newComicsData)
+        setPage(page)
     };
 
     return (
         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Container sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <Button variant="contained" color="error" disabled={comics.length < limit} onClick={() => handlePageChange(currentPage - limit, limit)}>
-                    Previous
-                </Button>
-                <Button variant="contained" disabled={comics.length > limit} onClick={() => handlePageChange(currentPage + limit, limit * 2)}>
-                    Next
-                </Button>
+            <Container sx={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+                <Pagination count={pagData.total} page={(page - 1) * 12 / pagData.limit + 1} color="primary" onChange={(_event, page) => handlePageChange(page)} />
             </Container>
             <Grid container rowSpacing={4} columnSpacing={{ xs: 1, sm: 2, md: 0 }} sx={{ display: 'flex', justifyContent: 'center'}}>
-                {comicsData?.map((comic) => (
+                {comicsData.map((comic) => (
                     <Grid xs={12} sm={6} md={4} lg={3} key={comic.id} sx={{ margin: 1 }}>
                         <Card sx={{ width: 320, height: 350, display: "flex", flexDirection: "column", alignItems: 'center', marginBottom: "30px", border: "2px solid #1E88E5"}}>
                             <Image
@@ -61,7 +59,9 @@ const Home: NextPage<HomeProps> = ({ comicsData }) => {
                                 </Typography>
                             </CardContent>
                             <CardActions>
-                                <Button size="small" variant="contained">Buy</Button>
+                                <Link href={`/checkout/${comic.id}`}>
+                                    <Button size="small" variant="contained">Buy</Button>
+                                </Link>
                                 <Link href={`/comics/${comic.id}`}>
                                     <Button size="small" variant="outlined">See details</Button>
                                 </Link>

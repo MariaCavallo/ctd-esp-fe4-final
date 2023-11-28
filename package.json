@@ -15,10 +15,11 @@
     "coverage": "jest --env=jsdom --coverage --runInBand --detectOpenHandles --forceExit "
   },
   "dependencies": {
-    "@emotion/react": "^11.10.4",
-    "@emotion/styled": "^11.10.4",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@hookform/resolvers": "^3.3.2",
     "@mui/icons-material": "^5.10.3",
-    "@mui/material": "^5.10.3",
+    "@mui/material": "^5.14.18",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.4.3",
@@ -27,7 +28,9 @@
     "md5": "^2.3.0",
     "next": "12.2.5",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "react-hook-form": "^7.48.2",
+    "yup": "^1.3.2"
   },
   "devDependencies": {
     "@babel/core": "^7.18.13",

@@ -1,16 +1,18 @@
 import * as React from 'react';
-import {FC, PropsWithChildren} from "react";
-import {Stack} from "@mui/material";
+import { FC, PropsWithChildren } from "react";
+import { Stack } from "@mui/material";
 import Box from "@mui/material/Box";
 import GeneralHeader from "../layouts/header/general-header.component";
 import GeneralFooter from "../layouts/footer/general-footer.component";
 
 
-const LayoutCheckout: FC<PropsWithChildren> = ({children}: PropsWithChildren) => {
+const LayoutCheckout: FC<PropsWithChildren> = ({ children }: PropsWithChildren) => {
 
-    return (<>
+    return (
+        //TODO implementar este layout
+        <>
             <Stack direction={"column"} height={'100%'}>
-                <GeneralHeader variant={'simple'}/>
+                <GeneralHeader variant={'simple'} />
                 <Box display={'flex'} flexGrow={1}>
                     {children}
                 </Box>

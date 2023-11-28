@@ -1,27 +1,34 @@
 import { GetStaticPaths, GetStaticProps, NextPage } from 'next';
-import Comic, { ComicProps } from 'src/components/comic/comic';
+import React from 'react'
+import Checkout from 'src/components/checkout/checkout'
+import { CheckoutInput } from 'src/features/checkout/checkout.types';
 import { getComic, getComics } from 'src/services/marvel/marvel.service';
 
 interface Props {
-    data: ComicProps;
+    data: CheckoutInput['order'];
 }
 
 const Index: NextPage<Props> = ({ data }) => {
-
+    
     return (
         <div>
-            <Comic data={data}/>
+            <Checkout data={data}/>
         </div>
     )
 }
 
 export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
     const comicId = params?.id as string;
-    const comic = await getComic(parseInt(comicId, 10))
+    const comic = await getComic(parseInt(comicId, 10));
+    const data: CheckoutInput['order'] = {
+        name: comic.title,
+        image: `${comic.thumbnail.path}.${comic.thumbnail.extension}`,
+        price: comic.price
+    }
 
     return {
         props: {
-            data: comic,
+            data
         },
         revalidate: 10,
     }
@@ -29,7 +36,7 @@ export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
 
 export const getStaticPaths: GetStaticPaths = async () => {
     const comics = await getComics();
-    const paths = comics.data.results.map((comic: any) => ({
+    const paths = comics.data.results.map((comic: { id: number }) => ({
         params: {
             id: `${comic.id}`
         }

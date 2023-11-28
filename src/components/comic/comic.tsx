@@ -51,7 +51,9 @@ const Comic: FC<Props> = ({ data }) => {
                                 </Box>
                                 <Box>
                                     {data.stock !== 0 ? (
-                                        <Button variant="contained" sx={{ width: 350 }}>Buy</Button>
+                                        <Link href={`/checkout/${data.id}`}>
+                                            <Button variant="contained" sx={{ width: 350 }}>Buy</Button>
+                                        </Link>
                                     ) : (
                                         <Button variant="contained" disabled sx={{ width: 350 }}>No Stock</Button>
                                     )}

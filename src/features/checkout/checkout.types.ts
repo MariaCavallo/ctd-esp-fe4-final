@@ -1,19 +1,19 @@
 export type CheckoutInput = {
     customer: {
         name: string,
-        lastname: string,
+        lastName: string,
         email: string
-        address: {
-            address1: string,
-            address2: string | null,
-            city: string,
-            state: string,
-            zipCode: string
-        }
+    }
+    address: {
+        address: string,
+        apartament: string | null,
+        city: string,
+        state: string,
+        zipCode: number
     },
     card: {
         number: string,
-        cvc: string,
+        cvc: number,
         expDate: string,
         nameOnCard: string
     },

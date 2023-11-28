@@ -13,15 +13,7 @@ export const getComics = async (offset?: number, limit?: number) => {
     const params = new URLSearchParams();
     if (offset) params.set("offset", `${offset}`);
     if (limit) params.set("limit", `${limit}`);
-    const response = await fetchApi("comics", params.toString());
-    return response.data.results.map((comic: any) => ({
-        id: comic.id,
-        title: comic.title,
-        thumbnail: {
-            path: comic.thumbnail.path,
-            extension: comic.thumbnail.extension,
-        }
-    }))
+    return fetchApi("comics", params.toString());
 }
 
 export const getComic = async (comicId: number) => {
