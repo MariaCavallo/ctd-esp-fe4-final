@@ -1,15 +1,15 @@
-import React, { FC, useState } from 'react'
-import { Alert, Box, Button, Card, CardContent, Step, StepLabel, Stepper, TextField, Typography } from '@mui/material'
+import React, { FC, useEffect, useState } from 'react'
+import { Alert, Box, Button, Card, CardContent, FormControl, Input, InputLabel, OutlinedInput, Step, StepLabel, Stepper, TextField, Typography } from '@mui/material'
 import Image from 'next/image';
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup';
 import { CheckoutInput } from 'src/features/checkout/checkout.types';
-import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
 interface Props {
-    data : CheckoutInput['order'];
+    data: CheckoutInput['order'];
 }
 
 const steps = ['Datos Personales', 'Dirección de entrega', 'Datos del Pago'];
@@ -25,14 +25,14 @@ const deliveryDataSchema = yup.object().shape({
     apartament: yup.string().nullable(),
     city: yup.string().required('City is required').max(40, 'Too long').min(3, 'Too short'),
     state: yup.string().required('State is required').max(40, 'Too long').min(3, 'Too short'),
-    zipCode: yup.number().required('ZipCode is required').max(10, 'Too long').min(5, 'Too short'),
+    zipCode: yup.string().required('ZipCode is required').max(10, 'Too long').min(4, 'Too short'),
 })
 
 const paymentDataSchema = yup.object().shape({
     nameOnCard: yup.string().required('Name on Card is required').max(40, 'Too long'),
-    number: yup.number().required('Number is required').max(20, 'Too long').min(10, 'Too short'),
+    number: yup.string().required('Number is required').max(20, 'Too long').min(10, 'Too short'),
     expDate: yup.string().required('Expire Data is required').max(5, 'Too long').min(4, 'Too short'),
-    cvc: yup.number().required('CVV is required').max(4, 'Too long').min(3, 'Too short'),
+    cvv: yup.number().required('CVV is required').max(4, 'Too long').min(3, 'Too short'),
 });
 
 const schema = yup.object().shape({
@@ -44,12 +44,12 @@ const schema = yup.object().shape({
 const Checkout: FC<Props> = ({ data }) => {
 
     const [activeStep, setActiveStep] = useState(0);
-    const { register, handleSubmit, reset, setValue, formState: { errors }, } = useForm({ resolver: yupResolver(schema) });
-    const methods = useForm();
+    const { control, handleSubmit, reset, setValue, formState: { errors }, } = useForm({ resolver: yupResolver(schema) });
+    const methods = useForm()
     const router = useRouter();
 
-    const handleNext = async () => {
-        if (methods.formState.isValid) {
+    const handleNext = () => {
+        if (Object.keys(errors).length === 0) {
             setActiveStep((prevActiveStep) => prevActiveStep + 1);
         }
     }
@@ -63,124 +63,207 @@ const Checkout: FC<Props> = ({ data }) => {
         reset();
     }
 
-    const onSubmit = async (formData: { customer: { name: string; lastName: string; email: string; }; address: { apartament?: string | null | undefined; address: string; city: string; state: string; zipCode: number; }; card: { number: number; nameOnCard: string; expDate: string; cvc: number; }; }) => {
-        const response = await fetch('/api/checkout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),
-        });
-        if (response.ok) {
-            setActiveStep(steps.length);
-            router.push({
-                pathname: '/confirmacion-compra',
-                query: { data: JSON.stringify(formData) }
-            })
-        }
+    const onSubmit = async (formData: { customer: { name: string; lastName: string; email: string; }; address: { apartament?: string | null | undefined; address: string; city: string; state: string; zipCode: string; }; card: { number: string; nameOnCard: string; expDate: string; cvv: number; }; }) => {
+        localStorage.setItem('formData', JSON.stringify(formData));
+        router.push({
+            pathname: '/confirmacion-compra',
+            query: { data: JSON.stringify(formData) }
+        })
     }
 
-//TODO validacion
+    useEffect(() => {
+        const storedData = localStorage.getItem('formData');
+        if (storedData) {
+            setValue('customer', JSON.parse(storedData).customer);
+            setValue('address', JSON.parse(storedData).address);
+            setValue('card', JSON.parse(storedData).card);
+        }
+    }, [setValue])
+
+    //TODO validaciones del form y del POST de la api devolviendo alerts
     const getStepContent = (step: number) => {
         switch (step) {
             case 0:
                 return (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        <TextField
-                            label="Name"
-                            required
-                            {...methods.register('customer.name')}
-                            error={errors?.customer?.name !== undefined}
-                            helperText={errors.customer?.name?.message}
+                        <FormControl error={errors?.customer?.name !== undefined}>
+                            <InputLabel htmlFor="customer.name">Name</InputLabel>
+                            <Controller
+                            control={control}
+                            name="customer.name"
+                            defaultValue="Jhon"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
-                        <TextField
-                            label="LastName"
-                            required
-                            {...methods.register('customer.lastName')}
-                            error={errors?.customer?.lastName !== undefined}
-                            helperText={errors.customer?.lastName?.message}
+                        {errors?.customer?.name && (
+                            <Typography variant="body2" color="error">
+                                {errors.customer.name.message}
+                            </Typography>
+                        )}
+                    </FormControl>
+                    <FormControl error={errors?.customer?.lastName !== undefined}>
+                        <InputLabel htmlFor="customer.lastName">LastName</InputLabel>
+                        <Controller
+                            control={control}
+                            name="customer.lastName"
+                            defaultValue="James"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
-                        <TextField
-                            label="Email"
-                            type='email'
-                            required
-                            {...methods.register('customer.email')}
-                            error={errors?.customer?.email !== undefined}
-                            helperText={errors.customer?.email?.message}
+                        {errors?.customer?.lastName && (
+                            <Typography variant="body2" color="error">
+                                {errors.customer.lastName.message}
+                            </Typography>
+                        )}
+                    </FormControl>
+                    <FormControl error={errors?.customer?.email !== undefined}>
+                        <InputLabel htmlFor="customer.email">Email</InputLabel>
+                        <Controller
+                            control={control}
+                            name="customer.email"
+                            defaultValue="jhon.james@gmail.com"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
+                        {errors?.customer?.email && (
+                            <Typography variant="body2" color="error">
+                                {errors.customer.email.message}
+                            </Typography>
+                        )}
+                    </FormControl>
                     </Box>
                 );
             case 1:
                 return (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        <TextField
-                            label="Address"
-                            required
-                            {...methods.register('address.address')}
-                            error={errors?.address?.address !== undefined}
-                            helperText={errors.address?.address?.message}
+                        <FormControl error={errors?.address?.address !== undefined}>
+                        <InputLabel htmlFor="address.address">Address</InputLabel>
+                        <Controller
+                            control={control}
+                            name="address.address"
+                            defaultValue="4430 Erat Avenue"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
-                        <TextField
-                            label="Apartament, etc"
-                            {...methods.register('address.apartament')}
-                            error={errors?.address?.apartament !== undefined}
-                            helperText={errors.address?.apartament?.message}
+                        {errors?.address?.address && (
+                            <Typography variant="body2" color="error">
+                                {errors.address.address.message}
+                            </Typography>
+                        )}
+                    </FormControl>
+                    <FormControl error={errors?.address?.apartament !== undefined}>
+                        <InputLabel htmlFor="address.apartament">Apartament, etc</InputLabel>
+                        <Controller
+                            control={control}
+                            name="address.apartament"
+                            defaultValue=""
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
-                        <TextField
-                            label="City"
-                            required
-                            {...methods.register('address.city')}
-                            error={errors?.address?.city !== undefined}
-                            helperText={errors.address?.city?.message}
+                        {errors?.address?.apartament && (
+                            <Typography variant="body2" color="error">
+                                {errors.address.apartament.message}
+                            </Typography>
+                        )}
+                    </FormControl>
+                    <FormControl error={errors?.address?.city !== undefined}>
+                        <InputLabel htmlFor="address.city">City</InputLabel>
+                        <Controller
+                            control={control}
+                            name="address.city"
+                            defaultValue="New York"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
-                        <TextField
-                            label="Province"
-                            required
-                            {...methods.register('address.state')}
-                            error={errors?.address?.state !== undefined}
-                            helperText={errors.address?.state?.message}
+                        {errors?.address?.city && (
+                            <Typography variant="body2" color="error">
+                                {errors.address.city.message}
+                            </Typography>
+                        )}
+                    </FormControl>
+                    <FormControl error={errors?.address?.state !== undefined}>
+                        <InputLabel htmlFor="address.state">Province</InputLabel>
+                        <Controller
+                            control={control}
+                            name="address.state"
+                            defaultValue="Brooklyn"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
-                        <TextField
-                            label="PostalCode"
-                            required
-                            {...methods.register('address.zipCode')}
-                            error={errors?.address?.zipCode !== undefined}
-                            helperText={errors.address?.zipCode?.message}
+                        {errors?.address?.state && (
+                            <Typography variant="body2" color="error">
+                                {errors.address.state.message}
+                            </Typography>
+                        )}
+                    </FormControl>
+                    <FormControl error={errors?.address?.zipCode !== undefined}>
+                        <InputLabel htmlFor="address.zipCode">ZipCode</InputLabel>
+                        <Controller
+                            control={control}
+                            name="address.zipCode"
+                            defaultValue="5225"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
+                        {errors?.address?.zipCode && (
+                            <Typography variant="body2" color="error">
+                                {errors.address.zipCode.message}
+                            </Typography>
+                        )}
+                    </FormControl>
                     </Box>
                 );
             case 2:
                 return (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        <TextField
-                            label="Name as it appears on the card"
-                            required
-                            {...methods.register('card.nameOnCard')}
-                            error={errors?.card?.nameOnCard !== undefined}
-                            helperText={errors.card?.nameOnCard?.message}
+                        <FormControl error={errors?.card?.nameOnCard !== undefined}>
+                        <InputLabel htmlFor="card.nameOnCard">Name as it appears on the card</InputLabel>
+                        <Controller
+                            control={control}
+                            name="card.nameOnCard"
+                            defaultValue="Jhon James"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
-                        <TextField
-                            label="CardNumber"
-                            required
-                            {...methods.register('card.number')}
-                            error={errors?.card?.number !== undefined}
-                            helperText={errors.card?.number?.message}
+                        {errors?.card?.nameOnCard && (
+                            <Typography variant="body2" color="error">
+                                {errors.card.nameOnCard.message}
+                            </Typography>
+                        )}
+                    </FormControl>
+                    <FormControl error={errors?.card?.number !== undefined}>
+                        <InputLabel htmlFor="card.number">Card number</InputLabel>
+                        <Controller
+                            control={control}
+                            name="card.number"
+                            defaultValue="4242 4242 4242 4242"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
-                        <TextField 
-                            label="Expiry Data MM/YY" 
-                            required
-                            {...methods.register('card.expDate')}
-                            error={errors?.card?.expDate !== undefined}
-                            helperText={errors.card?.expDate?.message}
+                        {errors?.card?.number && (
+                            <Typography variant="body2" color="error">
+                                {errors.card.number.message}
+                            </Typography>
+                        )}
+                    </FormControl>
+                    <FormControl error={errors?.card?.expDate !== undefined}>
+                        <InputLabel htmlFor="card.expDate">Expiry Data MM/YY</InputLabel>
+                        <Controller
+                            control={control}
+                            name="card.expDate"
+                            defaultValue="09/25"
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
-                        <TextField
-                            label="CVV"
-                            required
-                            type='password'
-                            {...methods.register('card.cvc')}
-                            error={errors?.card?.cvc !== undefined}
-                            helperText={errors.card?.cvc?.message}
+                        {errors?.card?.expDate && (
+                            <Typography variant="body2" color="error">
+                                {errors.card.expDate.message}
+                            </Typography>
+                        )}
+                    </FormControl>
+                    <FormControl error={errors?.card?.cvv !== undefined}>
+                        <InputLabel htmlFor="card.cvv">CVV</InputLabel>
+                        <Controller
+                            control={control}
+                            name="card.cvv"
+                            defaultValue={123}
+                            render={({ field }) => <OutlinedInput {...field} />}
                         />
+                        {errors?.card?.cvv && (
+                            <Typography variant="body2" color="error">
+                                {errors.card.cvv.message}
+                            </Typography>
+                        )}
+                    </FormControl>
                     </Box>
                 )
             default:
@@ -226,11 +309,10 @@ const Checkout: FC<Props> = ({ data }) => {
                                     Prev
                                 </Button>
                                 <Box sx={{ flex: '1 1 auto' }} />
-                                <Button 
-                                    variant='contained' 
-                                    type='submit' 
+                                <Button
+                                    variant='contained'
+                                    type='submit'
                                     onClick={handleNext}
-                                    disabled={!methods.formState.isValid}
                                 >
                                     {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
                                 </Button>
@@ -240,7 +322,7 @@ const Checkout: FC<Props> = ({ data }) => {
                 </Box>
                 <Box>
                     <Card>
-                        <CardContent sx={{ display: 'flex', flexDirection: 'column', flexWrap: 'wrap',alignItems: 'center', width: '24vw', textAlign: 'center' }}>
+                        <CardContent sx={{ display: 'flex', flexDirection: 'column', flexWrap: 'wrap', alignItems: 'center', width: '24vw', textAlign: 'center' }}>
                             <Image src={data.image} alt={data.name} width={200} height={200} />
                             <br />
                             <Typography variant='body1' color={"#0D47A1"}>{data.name}</Typography>

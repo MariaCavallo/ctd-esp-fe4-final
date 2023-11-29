@@ -7,7 +7,7 @@ import LayoutCheckout from 'src/components/layouts/layout-checkout';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
-  const isCheckoutPage = router.pathname.includes('/checkout' || '/confirmacion-compra')
+  const isCheckoutPage = router.pathname.includes('/checkout' && '/confirmacion-compra')
 
   return (
     <ThemeProvider theme={theme}>

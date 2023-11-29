@@ -9,7 +9,6 @@ import GeneralFooter from "../layouts/footer/general-footer.component";
 const LayoutCheckout: FC<PropsWithChildren> = ({ children }: PropsWithChildren) => {
 
     return (
-        //TODO implementar este layout
         <>
             <Stack direction={"column"} height={'100%'}>
                 <GeneralHeader variant={'simple'} />

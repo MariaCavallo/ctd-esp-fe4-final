@@ -1,7 +1,7 @@
 import { Box, Card, CardContent, Container, Paper, Typography } from '@mui/material'
 import { GetStaticPaths, GetStaticProps, NextPage } from 'next'
 import Image from 'next/image'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { CheckoutInput } from 'src/features/checkout/checkout.types'
 
 interface DataProps {
@@ -16,9 +16,23 @@ interface Props {
 
 const ConfirmationPage: NextPage<Props> = ({ data }) => {
 
+  const [localData, setLocalData] = useState<DataProps | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedData = localStorage.getItem('formData');
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        setLocalData(parsedData);
+      }
+    }
+  }, [])
+
+  const displayData = localStorage || data;
+
   return (
     <Box>
-      <Box component={'section'} margin={3} width={'80vw'}>
+      <Box component={'section'} margin={3} width={'80vw'} sx={{ display: 'flex', flexDirection: 'column', flexWrap: 'wrap', alignContent: 'center', marginLeft: '12%' }}>
         <Typography variant='h4' bgcolor={'green'} color={'white'} textAlign={'center'} fontWeight={700}>
           Enjoy your purchase!
         </Typography>
@@ -27,12 +41,12 @@ const ConfirmationPage: NextPage<Props> = ({ data }) => {
             <Paper>
               <Card>
                 <CardContent>
-                  <Image src={data?.dataOrder?.image} alt={data?.dataOrder?.name} width={300} height={300} />
+                  <Image src={displayData?.dataOrder?.image} alt={displayData?.dataOrder?.name} width={300} height={300} />
                 </CardContent>
               </Card>
               <Box>
-                <Typography>{data?.dataOrder?.name}</Typography>
-                <Typography>{data?.dataOrder?.price}</Typography>
+                <Typography>{displayData?.dataOrder?.name}</Typography>
+                <Typography>{displayData?.dataOrder?.price}</Typography>
               </Box>
             </Paper>
           </Container>
@@ -41,9 +55,9 @@ const ConfirmationPage: NextPage<Props> = ({ data }) => {
               <Card sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-around',  height: '8rem' }}>
                 <Typography fontWeight={700}>Datos Personales</Typography>
                 <Box>
-                  <Typography>{`${data?.dataCustomer?.name}  ${data?.dataCustomer?.lastName}`}</Typography>
+                  <Typography>{`${displayData?.dataCustomer?.name}  ${displayData?.dataCustomer?.lastName}`}</Typography>
                   <br />
-                  <Typography>{data?.dataCustomer?.email}</Typography>
+                  <Typography>{displayData?.dataCustomer?.email}</Typography>
                 </Box>
               </Card>
             </Paper>
@@ -51,9 +65,9 @@ const ConfirmationPage: NextPage<Props> = ({ data }) => {
               <Card sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-around', height: '8rem' }}>
                 <Typography fontWeight={700}>Direccion de entrega</Typography>
                 <Box>
-                  <Typography>{data?.dataAddress?.address}</Typography>
+                  <Typography>{displayData?.dataAddress?.address}</Typography>
                   <br />
-                  <Typography>{`${data?.dataAddress?.city}, ${data?.dataAddress?.state} (${data?.dataAddress?.zipCode})`}</Typography>
+                  <Typography>{`${displayData?.dataAddress?.city}, ${displayData?.dataAddress?.state} (${displayData?.dataAddress?.zipCode})`}</Typography>
                 </Box>
               </Card>
             </Paper>

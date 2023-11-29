@@ -25,22 +25,16 @@ const Index: NextPage<IndexProps> = ({ comicsData, pagData  }) => {
 
 export const getStaticProps: GetStaticProps = async () => {
 
-    const ITEMS_PER_PAGE = 12; 
-    const dataComics = await getComics(0, ITEMS_PER_PAGE);
-    const { offset, limit } = dataComics.data;
-    const dataPage = await getComics(offset, limit);
-
+    const response = await getComics();
+    const data = await response;
+    console.log(data);
+    
     return {
         props: {
-            comicsData: dataPage.data.results,
-            pagData: {
-                offset,
-                limit,
-                total: dataPage.data.total,
-                count: dataPage.data.count,
-            },
+            comicsData: data.data.results,
+            pagData: data.data,
         },
-    }; 
+    };
 }
 
 export default Index

@@ -29,19 +29,39 @@ interface HomeProps {
 const Home: NextPage<HomeProps> = ({ comicsData, pagData }) => {
     
     const [comics, setComics] = useState<ComicsProps[]>(comicsData);
-    const [page, setPage] = useState(1);
+    const [offset, setOffset] = useState<number>(pagData.offset);
+    const [limit, setLimit] = useState<number>(pagData.limit);
     
-    const handlePageChange = async (page: number) => {
-        const offset = (page - 1) * 12;
-        const newComicsData = await getComics(offset, pagData.limit);
-        setComics(newComicsData)
-        setPage(page)
-    };
+    useEffect(() => {
+        const fetchData = async () => {
+            const response = await fetch(`https://gateway.marvel.com/v1/public/comics?ts=1699966256616&apikey=d279a9f11f2c2a902a340aeaa5d21ee1&hash=a5b4d491e755602d50aa9898de7f7018&offset=${offset}&limit=${limit}`);
+            const data = await response.json()
+
+            setComics(data.data.results);
+            setOffset(data.data.offset);
+            setLimit(data.data.limit);
+        }
+
+        fetchData();
+
+    }, [limit, offset])
+    
+    const handleChangePage = (newOffset: number, newLimit: number) => {
+        setOffset(newOffset);
+        setLimit(newLimit);
+    }
 
     return (
         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Container sx={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
-                <Pagination count={pagData.total} page={(page - 1) * 12 / pagData.limit + 1} color="primary" onChange={(_event, page) => handlePageChange(page)} />
+                <Pagination 
+                    count={pagData?.total} 
+                    page={(offset / limit) + 1} 
+                    color="primary" 
+                    onChange={(_event, page) => {
+                        const newOffset = (page - 1) * limit;
+                        handleChangePage(newOffset, limit);
+                    }} />
             </Container>
             <Grid container rowSpacing={4} columnSpacing={{ xs: 1, sm: 2, md: 0 }} sx={{ display: 'flex', justifyContent: 'center'}}>
                 {comicsData.map((comic) => (

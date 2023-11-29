@@ -9,11 +9,11 @@ export type CheckoutInput = {
         apartament: string | null,
         city: string,
         state: string,
-        zipCode: number
+        zipCode: string
     },
     card: {
         number: string,
-        cvc: number,
+        cvv: number,
         expDate: string,
         nameOnCard: string
     },

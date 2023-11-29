@@ -18,7 +18,7 @@ import {
 describe('Checkout', () => {
     describe('when sending a valid POST, customer and card data', () => {
         it('should return a 400 error', async () => {
-            const order = {customer: {address: {}}, card: {number: validCard}} as CheckoutInput
+            const order = { customer: { address: {} }, card: { number: validCard } } as unknown as CheckoutInput
             const {req, res} = createMocks({
                 method: 'POST',
                 body: order
@@ -46,7 +46,7 @@ describe('Checkout', () => {
         it('should return a 400 error', async () => {
             const {req, res} = createMocks({
                 method: 'POST',
-                body: {customer: {address: {address2: invalidAddress}}} as CheckoutInput
+                body: { customer: { address: { address2: invalidAddress } } } as unknown as CheckoutInput
             });
             await handleCheckout(req, res);
             expect(res._getStatusCode()).toBe(400)
@@ -72,7 +72,7 @@ describe('Checkout', () => {
         it('should return a 400 error', async () => {
             const {req, res} = createMocks({
                 method: 'POST',
-                body: {customer: {address: {}}, card: {number: withoutFundsCard}} as CheckoutInput
+                body: { customer: { address: {} }, card: { number: withoutFundsCard } } as unknown as CheckoutInput
             });
             await handleCheckout(req, res);
             expect(res._getStatusCode()).toBe(400)
@@ -85,7 +85,7 @@ describe('Checkout', () => {
         it('should return a 400 error', async () => {
             const {req, res} = createMocks({
                 method: 'POST',
-                body: {customer: {address: {}}, card: {number: withoutAuthorizationCard}} as CheckoutInput
+                body: { customer: { address: {} }, card: { number: withoutAuthorizationCard } } as unknown as CheckoutInput
             });
             await handleCheckout(req, res);
             expect(res._getStatusCode()).toBe(400)
@@ -98,7 +98,7 @@ describe('Checkout', () => {
         it('should return a 400 error', async () => {
             const {req, res} = createMocks({
                 method: 'POST',
-                body: {customer: {address: {}}, card: {number: '4111'}} as CheckoutInput
+                body: { customer: { address: {} }, card: { number: '4111' } } as unknown as CheckoutInput
             });
             await handleCheckout(req, res);
             expect(res._getStatusCode()).toBe(400)
