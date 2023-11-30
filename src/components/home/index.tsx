@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { NextPage } from 'next'
 import Image from 'next/image'
-import { Box, Grid, Card, Button, CardActions, CardContent, Typography, Pagination, Stack, Container } from '@mui/material'
-import { getComics } from 'src/services/marvel/marvel.service'
+import { Box, Grid, Card, Button, CardActions, CardContent, Typography, Container } from '@mui/material'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
+import PaginationComponent from '../pagination/pagination'
 
 export interface ComicsProps {
     id: number,
@@ -14,54 +15,32 @@ export interface ComicsProps {
     }
 }
 
-export interface PaginationProps {
-    offset: number,
-    limit: number,
-    total: number,
-    count: number
-}
-
 interface HomeProps {
     comicsData: ComicsProps[];
-    pagData: PaginationProps;
+    totalPages: number;
+    currentPages: number;
 }
 
-const Home: NextPage<HomeProps> = ({ comicsData, pagData }) => {
-    
-    const [comics, setComics] = useState<ComicsProps[]>(comicsData);
-    const [offset, setOffset] = useState<number>(pagData.offset);
-    const [limit, setLimit] = useState<number>(pagData.limit);
-    
-    useEffect(() => {
-        const fetchData = async () => {
-            const response = await fetch(`https://gateway.marvel.com/v1/public/comics?ts=1699966256616&apikey=d279a9f11f2c2a902a340aeaa5d21ee1&hash=a5b4d491e755602d50aa9898de7f7018&offset=${offset}&limit=${limit}`);
-            const data = await response.json()
+const Home: NextPage<HomeProps> = ({ comicsData, totalPages, currentPages }) => {
 
-            setComics(data.data.results);
-            setOffset(data.data.offset);
-            setLimit(data.data.limit);
-        }
+    const [loading, setLoading] = useState(false);
 
-        fetchData();
+    const route = useRouter();
 
-    }, [limit, offset])
-    
-    const handleChangePage = (newOffset: number, newLimit: number) => {
-        setOffset(newOffset);
-        setLimit(newLimit);
+    const handlePageChange = async (event: React.ChangeEvent<unknown>, page: number) => {
+        setLoading(true);
+        await route.push(`/?page=${page}`);
+        setLoading(false)
     }
 
     return (
         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Container sx={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
-                <Pagination 
-                    count={pagData?.total} 
-                    page={(offset / limit) + 1} 
-                    color="primary" 
-                    onChange={(_event, page) => {
-                        const newOffset = (page - 1) * limit;
-                        handleChangePage(newOffset, limit);
-                    }} />
+                <PaginationComponent 
+                    totalPage={totalPages}
+                    currentPage={currentPages}
+                    onChange={handlePageChange}
+                />
             </Container>
             <Grid container rowSpacing={4} columnSpacing={{ xs: 1, sm: 2, md: 0 }} sx={{ display: 'flex', justifyContent: 'center'}}>
                 {comicsData.map((comic) => (
@@ -74,7 +53,7 @@ const Home: NextPage<HomeProps> = ({ comicsData, pagData }) => {
                                 height={250} 
                             />
                             <CardContent>
-                                <Typography gutterBottom variant="h5" component="div" color={"#0D47A1"}>
+                                <Typography gutterBottom variant="h6" component="div" color={"#0D47A1"}>
                                     {comic.title}
                                 </Typography>
                             </CardContent>
