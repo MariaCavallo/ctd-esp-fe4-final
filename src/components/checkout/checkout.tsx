@@ -12,39 +12,58 @@ interface Props {
     data: CheckoutInput['order'];
 }
 
+interface FormValues {
+    name: string;
+    lastName: string;
+    email: string;
+    address: string;
+    apartament?: string;
+    city: string;
+    state: string;
+    zipCode: number;
+    nameOnCard: string;
+    number: number;
+    expDate: string;
+    cvv: number;
+}
+
 const steps = ['Datos Personales', 'Dirección de entrega', 'Datos del Pago'];
 
-const personalDataSchema = yup.object().shape({
+const schema = yup.object().shape({
     name: yup.string().required('Name is required').max(20, 'Too long').min(3, 'Too short'),
     lastName: yup.string().required('LastName is required').max(20, 'Too long').min(3, 'Too short'),
     email: yup.string().email('Invalid email format').required('Email is required'),
-})
-
-const deliveryDataSchema = yup.object().shape({
     address: yup.string().required('Address is required').max(20, 'Too long').min(3, 'Too short'),
     apartament: yup.string().nullable(),
     city: yup.string().required('City is required').max(40, 'Too long').min(3, 'Too short'),
     state: yup.string().required('State is required').max(40, 'Too long').min(3, 'Too short'),
-    zipCode: yup.string().required('ZipCode is required').max(10, 'Too long').min(4, 'Too short'),
-})
-
-const paymentDataSchema = yup.object().shape({
+    zipCode: yup.number().required('ZipCode is required').max(10, 'Too long').min(4, 'Too short'),
     nameOnCard: yup.string().required('Name on Card is required').max(40, 'Too long'),
-    number: yup.string().required('Number is required').max(20, 'Too long').min(10, 'Too short'),
+    number: yup.number().required('Number is required').max(20, 'Too long').min(10, 'Too short'),
     expDate: yup.string().required('Expire Data is required').max(5, 'Too long').min(4, 'Too short'),
     cvv: yup.number().required('CVV is required').max(4, 'Too long').min(3, 'Too short'),
-});
-
-const schema = yup.object().shape({
-    customer: personalDataSchema,
-    address: deliveryDataSchema,
-    card: paymentDataSchema,
-}).required()
+})
 
 const Checkout: FC<Props> = ({ data }) => {
 
     const [activeStep, setActiveStep] = useState(0);
-    const { control, handleSubmit, reset, setValue, formState: { errors }, } = useForm({ resolver: yupResolver(schema) });
+    const { control, handleSubmit, reset, setValue, formState: { errors }, } = useForm({
+        resolver: yupResolver(schema),
+        defaultValues: {
+            name: "Jhon",
+            lastName: "James",
+            email: "jhon.james@gmail.com",
+            address: "4430 Erat Avenue",
+            apartament: null,
+            city: "New York",
+            state: "Brooklyn",
+            zipCode: 5225,
+            nameOnCard: "Jhon James",
+            number: 4242424242424242,
+            expDate: "09/25",
+            cvv: 123,
+            },
+    });
     const methods = useForm()
     const router = useRouter();
 
@@ -63,22 +82,33 @@ const Checkout: FC<Props> = ({ data }) => {
         reset();
     }
 
-    const onSubmit = async (formData: { customer: { name: string; lastName: string; email: string; }; address: { apartament?: string | null | undefined; address: string; city: string; state: string; zipCode: string; }; card: { number: string; nameOnCard: string; expDate: string; cvv: number; }; }) => {
-        localStorage.setItem('formData', JSON.stringify(formData));
+    const onSubmit: SubmitHandler<FormValues> = async (formData) => {
+        const formattedData = {
+            customer: {
+                name: formData.name,
+                lastName: formData.lastName,
+                email: formData.email,
+            },
+            address: {
+                address: formData.address,
+                apartament: formData.apartament || null,
+                city: formData.city,
+                state: formData.state,
+                zipCode:  formData.zipCode,
+            },
+            card: {
+                nameOnCard: formData.nameOnCard,
+                number: formData.number,
+                expDate: formData.expDate,
+                cvv: formData.cvv,
+            }
+        }
+        localStorage.setItem('formattedData', JSON.stringify(formattedData));
         router.push({
             pathname: '/confirmacion-compra',
             query: { data: JSON.stringify(formData) }
         })
     }
-
-    useEffect(() => {
-        const storedData = localStorage.getItem('formData');
-        if (storedData) {
-            setValue('customer', JSON.parse(storedData).customer);
-            setValue('address', JSON.parse(storedData).address);
-            setValue('card', JSON.parse(storedData).card);
-        }
-    }, [setValue])
 
     //TODO validaciones del form y del POST de la api devolviendo alerts
     const getStepContent = (step: number) => {
@@ -86,184 +116,184 @@ const Checkout: FC<Props> = ({ data }) => {
             case 0:
                 return (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        <FormControl error={errors?.customer?.name !== undefined}>
-                            <InputLabel htmlFor="customer.name">Name</InputLabel>
+                        <FormControl error={errors?.name !== undefined}>
+                            <InputLabel htmlFor="name">Name</InputLabel>
                             <Controller
-                            control={control}
-                            name="customer.name"
-                            defaultValue="Jhon"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.customer?.name && (
-                            <Typography variant="body2" color="error">
-                                {errors.customer.name.message}
-                            </Typography>
-                        )}
-                    </FormControl>
-                    <FormControl error={errors?.customer?.lastName !== undefined}>
-                        <InputLabel htmlFor="customer.lastName">LastName</InputLabel>
-                        <Controller
-                            control={control}
-                            name="customer.lastName"
-                            defaultValue="James"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.customer?.lastName && (
-                            <Typography variant="body2" color="error">
-                                {errors.customer.lastName.message}
-                            </Typography>
-                        )}
-                    </FormControl>
-                    <FormControl error={errors?.customer?.email !== undefined}>
-                        <InputLabel htmlFor="customer.email">Email</InputLabel>
-                        <Controller
-                            control={control}
-                            name="customer.email"
-                            defaultValue="jhon.james@gmail.com"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.customer?.email && (
-                            <Typography variant="body2" color="error">
-                                {errors.customer.email.message}
-                            </Typography>
-                        )}
-                    </FormControl>
+                                control={control}
+                                name="name"
+                                defaultValue="Jhon"
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.name && (
+                                <Typography variant="body2" color="error">
+                                    {errors.name.message}
+                                </Typography>
+                            )}
+                        </FormControl>
+                        <FormControl error={errors?.lastName !== undefined}>
+                            <InputLabel htmlFor="lastName">LastName</InputLabel>
+                            <Controller
+                                control={control}
+                                name="lastName"
+                                defaultValue="James"
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.lastName && (
+                                <Typography variant="body2" color="error">
+                                    {errors.lastName.message}
+                                </Typography>
+                            )}
+                        </FormControl>
+                        <FormControl error={errors?.email !== undefined}>
+                            <InputLabel htmlFor="email">Email</InputLabel>
+                            <Controller
+                                control={control}
+                                name="email"
+                                defaultValue="jhon.james@gmail.com"
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.email && (
+                                <Typography variant="body2" color="error">
+                                    {errors.email.message}
+                                </Typography>
+                            )}
+                        </FormControl>
                     </Box>
                 );
             case 1:
                 return (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        <FormControl error={errors?.address?.address !== undefined}>
-                        <InputLabel htmlFor="address.address">Address</InputLabel>
-                        <Controller
-                            control={control}
-                            name="address.address"
-                            defaultValue="4430 Erat Avenue"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.address?.address && (
-                            <Typography variant="body2" color="error">
-                                {errors.address.address.message}
-                            </Typography>
-                        )}
-                    </FormControl>
-                    <FormControl error={errors?.address?.apartament !== undefined}>
-                        <InputLabel htmlFor="address.apartament">Apartament, etc</InputLabel>
-                        <Controller
-                            control={control}
-                            name="address.apartament"
-                            defaultValue=""
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.address?.apartament && (
-                            <Typography variant="body2" color="error">
-                                {errors.address.apartament.message}
-                            </Typography>
-                        )}
-                    </FormControl>
-                    <FormControl error={errors?.address?.city !== undefined}>
-                        <InputLabel htmlFor="address.city">City</InputLabel>
-                        <Controller
-                            control={control}
-                            name="address.city"
-                            defaultValue="New York"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.address?.city && (
-                            <Typography variant="body2" color="error">
-                                {errors.address.city.message}
-                            </Typography>
-                        )}
-                    </FormControl>
-                    <FormControl error={errors?.address?.state !== undefined}>
-                        <InputLabel htmlFor="address.state">Province</InputLabel>
-                        <Controller
-                            control={control}
-                            name="address.state"
-                            defaultValue="Brooklyn"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.address?.state && (
-                            <Typography variant="body2" color="error">
-                                {errors.address.state.message}
-                            </Typography>
-                        )}
-                    </FormControl>
-                    <FormControl error={errors?.address?.zipCode !== undefined}>
-                        <InputLabel htmlFor="address.zipCode">ZipCode</InputLabel>
-                        <Controller
-                            control={control}
-                            name="address.zipCode"
-                            defaultValue="5225"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.address?.zipCode && (
-                            <Typography variant="body2" color="error">
-                                {errors.address.zipCode.message}
-                            </Typography>
-                        )}
-                    </FormControl>
+                        <FormControl error={errors?.address !== undefined}>
+                            <InputLabel htmlFor="address">Address</InputLabel>
+                            <Controller
+                                control={control}
+                                name="address"
+                                defaultValue="4430 Erat Avenue"
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.address && (
+                                <Typography variant="body2" color="error">
+                                    {errors.address.message}
+                                </Typography>
+                            )}
+                        </FormControl>
+                        <FormControl error={errors?.apartament !== undefined}>
+                            <InputLabel htmlFor="apartament">Apartament, etc</InputLabel>
+                            <Controller
+                                control={control}
+                                name="apartament"
+                                defaultValue=""
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.apartament && (
+                                <Typography variant="body2" color="error">
+                                    {errors?.apartament.message}
+                                </Typography>
+                            )}
+                        </FormControl>
+                        <FormControl error={errors?.city !== undefined}>
+                            <InputLabel htmlFor="city">City</InputLabel>
+                            <Controller
+                                control={control}
+                                name="city"
+                                defaultValue="New York"
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.city && (
+                                <Typography variant="body2" color="error">
+                                    {errors?.city.message}
+                                </Typography>
+                            )}
+                        </FormControl>
+                        <FormControl error={errors?.state !== undefined}>
+                            <InputLabel htmlFor="address.state">Province</InputLabel>
+                            <Controller
+                                control={control}
+                                name="state"
+                                defaultValue="Brooklyn"
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.state && (
+                                <Typography variant="body2" color="error">
+                                    {errors?.state.message}
+                                </Typography>
+                            )}
+                        </FormControl>
+                        <FormControl error={errors?.zipCode !== undefined}>
+                            <InputLabel htmlFor="zipCode">ZipCode</InputLabel>
+                            <Controller
+                                control={control}
+                                name="zipCode"
+                                defaultValue={5225}
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.zipCode && (
+                                <Typography variant="body2" color="error">
+                                    {errors?.zipCode.message}
+                                </Typography>
+                            )}
+                        </FormControl>
                     </Box>
                 );
             case 2:
                 return (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        <FormControl error={errors?.card?.nameOnCard !== undefined}>
-                        <InputLabel htmlFor="card.nameOnCard">Name as it appears on the card</InputLabel>
-                        <Controller
-                            control={control}
-                            name="card.nameOnCard"
-                            defaultValue="Jhon James"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.card?.nameOnCard && (
-                            <Typography variant="body2" color="error">
-                                {errors.card.nameOnCard.message}
-                            </Typography>
-                        )}
-                    </FormControl>
-                    <FormControl error={errors?.card?.number !== undefined}>
-                        <InputLabel htmlFor="card.number">Card number</InputLabel>
-                        <Controller
-                            control={control}
-                            name="card.number"
-                            defaultValue="4242 4242 4242 4242"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.card?.number && (
-                            <Typography variant="body2" color="error">
-                                {errors.card.number.message}
-                            </Typography>
-                        )}
-                    </FormControl>
-                    <FormControl error={errors?.card?.expDate !== undefined}>
-                        <InputLabel htmlFor="card.expDate">Expiry Data MM/YY</InputLabel>
-                        <Controller
-                            control={control}
-                            name="card.expDate"
-                            defaultValue="09/25"
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.card?.expDate && (
-                            <Typography variant="body2" color="error">
-                                {errors.card.expDate.message}
-                            </Typography>
-                        )}
-                    </FormControl>
-                    <FormControl error={errors?.card?.cvv !== undefined}>
-                        <InputLabel htmlFor="card.cvv">CVV</InputLabel>
-                        <Controller
-                            control={control}
-                            name="card.cvv"
-                            defaultValue={123}
-                            render={({ field }) => <OutlinedInput {...field} />}
-                        />
-                        {errors?.card?.cvv && (
-                            <Typography variant="body2" color="error">
-                                {errors.card.cvv.message}
-                            </Typography>
-                        )}
-                    </FormControl>
+                        <FormControl error={errors?.nameOnCard !== undefined}>
+                            <InputLabel htmlFor="nameOnCard">Name as it appears on the card</InputLabel>
+                            <Controller
+                                control={control}
+                                name="nameOnCard"
+                                defaultValue="Jhon James"
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.nameOnCard && (
+                                <Typography variant="body2" color="error">
+                                    {errors?.nameOnCard.message}
+                                </Typography>
+                            )}
+                        </FormControl>
+                        <FormControl error={errors?.number !== undefined}>
+                            <InputLabel htmlFor="number">Card number</InputLabel>
+                            <Controller
+                                control={control}
+                                name="number"
+                                defaultValue={4242424242424242}
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.number && (
+                                <Typography variant="body2" color="error">
+                                    {errors?.number.message}
+                                </Typography>
+                            )}
+                        </FormControl>
+                        <FormControl error={errors?.expDate !== undefined}>
+                            <InputLabel htmlFor="expDate">Expiry Data MM/YY</InputLabel>
+                            <Controller
+                                control={control}
+                                name="expDate"
+                                defaultValue="09/25"
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.expDate && (
+                                <Typography variant="body2" color="error">
+                                    {errors?.expDate.message}
+                                </Typography>
+                            )}
+                        </FormControl>
+                        <FormControl error={errors?.cvv !== undefined}>
+                            <InputLabel htmlFor="cvv">CVV</InputLabel>
+                            <Controller
+                                control={control}
+                                name="cvv"
+                                defaultValue={123}
+                                render={({ field }) => <OutlinedInput {...field} />}
+                            />
+                            {errors?.cvv && (
+                                <Typography variant="body2" color="error">
+                                    {errors?.cvv.message}
+                                </Typography>
+                            )}
+                        </FormControl>
                     </Box>
                 )
             default:

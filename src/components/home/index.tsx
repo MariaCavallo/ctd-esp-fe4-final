@@ -58,9 +58,7 @@ const Home: NextPage<HomeProps> = ({ comicsData, totalPages, currentPages }) => 
                                 </Typography>
                             </CardContent>
                             <CardActions>
-                                <Link href={`/checkout/${comic.id}`}>
                                     <Button size="small" variant="contained">Buy</Button>
-                                </Link>
                                 <Link href={`/comics/${comic.id}`}>
                                     <Button size="small" variant="outlined">See details</Button>
                                 </Link>
