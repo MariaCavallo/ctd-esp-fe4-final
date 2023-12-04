@@ -4,7 +4,7 @@ import handleCheckout, {
     validCard,
     withoutAuthorizationCard,
     withoutFundsCard
-} from "../../pages/api/checkout.route";
+} from "./checkout.route";
 import {CheckoutInput} from "../../features/checkout/checkout.types";
 import {
     ERROR_CARD_DATA_INCORRECT,

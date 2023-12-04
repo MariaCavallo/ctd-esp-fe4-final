@@ -1,10 +1,11 @@
-import React, { FC, useEffect, useState } from 'react'
-import { Alert, Box, Button, Card, CardContent, FormControl, Input, InputLabel, OutlinedInput, Step, StepLabel, Stepper, TextField, Typography } from '@mui/material'
+import React, { FC, SyntheticEvent, forwardRef, useState } from 'react'
+import { Box, Button, Card, CardContent, Snackbar, Step, StepLabel, Stepper, TextField, Typography } from '@mui/material'
+import MuiAlert, { AlertColor, AlertProps } from '@mui/material/Alert';
 import Image from 'next/image';
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup';
 import { CheckoutInput } from 'src/features/checkout/checkout.types';
-import { Controller, FormProvider, SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, FormProvider, Resolver, SubmitHandler, useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
@@ -12,20 +13,27 @@ interface Props {
     data: CheckoutInput['order'];
 }
 
-interface FormValues {
+type FormValues = {
     name: string;
     lastName: string;
     email: string;
     address: string;
-    apartament?: string;
+    apartament: string;
     city: string;
     state: string;
-    zipCode: number;
+    zipCode: string;
     nameOnCard: string;
-    number: number;
+    numberOfCard: string;
     expDate: string;
-    cvv: number;
+    cvv: string;
 }
+
+const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
+    props,
+    ref,
+) {
+    return <MuiAlert elevation={6} ref={ref} variant='outlined' {...props}/>
+});
 
 const steps = ['Datos Personales', 'Dirección de entrega', 'Datos del Pago'];
 
@@ -34,42 +42,78 @@ const schema = yup.object().shape({
     lastName: yup.string().required('LastName is required').max(20, 'Too long').min(3, 'Too short'),
     email: yup.string().email('Invalid email format').required('Email is required'),
     address: yup.string().required('Address is required').max(20, 'Too long').min(3, 'Too short'),
-    apartament: yup.string().nullable(),
+    apartament: yup.string(),
     city: yup.string().required('City is required').max(40, 'Too long').min(3, 'Too short'),
     state: yup.string().required('State is required').max(40, 'Too long').min(3, 'Too short'),
-    zipCode: yup.number().required('ZipCode is required').max(10, 'Too long').min(4, 'Too short'),
+    zipCode: yup.string().required('ZipCode is required').matches(/^\d+$/, 'ZipCode must be a number').min(2, 'Too short').max(8, 'Too long'),
     nameOnCard: yup.string().required('Name on Card is required').max(40, 'Too long'),
-    number: yup.number().required('Number is required').max(20, 'Too long').min(10, 'Too short'),
+    numberOfCard: yup.string().required('Number of Card is required').matches(/^\d+$/, 'NumberOfCard must be a number').min(14, 'Too short').max(16, 'Too long'),
     expDate: yup.string().required('Expire Data is required').max(5, 'Too long').min(4, 'Too short'),
-    cvv: yup.number().required('CVV is required').max(4, 'Too long').min(3, 'Too short'),
+    cvv: yup.string().required('cvv is required').matches(/^\d+$/, 'cvv must be a number').min(2, 'Too short').max(5, 'Too long'),
 })
 
 const Checkout: FC<Props> = ({ data }) => {
 
     const [activeStep, setActiveStep] = useState(0);
-    const { control, handleSubmit, reset, setValue, formState: { errors }, } = useForm({
-        resolver: yupResolver(schema),
+    const [open, setOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("")
+    
+    const { control, handleSubmit, trigger } = useForm<FormValues>({
+        resolver: yupResolver(schema) as Resolver<FormValues>,
         defaultValues: {
             name: "Jhon",
             lastName: "James",
             email: "jhon.james@gmail.com",
             address: "4430 Erat Avenue",
-            apartament: null,
+            apartament: "",
             city: "New York",
             state: "Brooklyn",
-            zipCode: 5225,
+            zipCode: "5225",
             nameOnCard: "Jhon James",
-            number: 4242424242424242,
+            numberOfCard: "4242424242424242",
             expDate: "09/25",
-            cvv: 123,
-            },
+            cvv: "123",
+        },
     });
-    const methods = useForm()
-    const router = useRouter();
+    const methods = useForm();
 
-    const handleNext = () => {
-        if (Object.keys(errors).length === 0) {
+    const handleNext = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        let isValid = false;
+
+        switch (activeStep) {
+            case 0:
+                isValid = await trigger([
+                    "name",
+                    "lastName",
+                    "email"
+                ])
+                break;
+            case 1:
+                isValid = await trigger([
+                    "address",
+                    "apartament",
+                    "city",
+                    "state",
+                    "zipCode"
+                ])
+                break;
+            case 2:
+                isValid = await trigger([
+                    "nameOnCard",
+                    "numberOfCard",
+                    "expDate",
+                    "cvv"
+                ])
+                break;
+        }
+
+        if (isValid) {
             setActiveStep((prevActiveStep) => prevActiveStep + 1);
+        }
+
+        if (activeStep === steps.length - 1) {
+            handleSubmit(onSubmit)
         }
     }
 
@@ -77,10 +121,12 @@ const Checkout: FC<Props> = ({ data }) => {
         setActiveStep((prevActiveStep) => prevActiveStep - 1);
     }
 
-    const handleReset = () => {
-        setActiveStep(0);
-        reset();
-    }
+    const handleClose = (event?: SyntheticEvent | Event, reason?: string) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setOpen(false);
+    };
 
     const onSubmit: SubmitHandler<FormValues> = async (formData) => {
         const formattedData = {
@@ -91,220 +137,247 @@ const Checkout: FC<Props> = ({ data }) => {
             },
             address: {
                 address: formData.address,
-                apartament: formData.apartament || null,
+                apartament: formData.apartament || "",
                 city: formData.city,
                 state: formData.state,
-                zipCode:  formData.zipCode,
+                zipCode: formData.zipCode,
             },
             card: {
                 nameOnCard: formData.nameOnCard,
-                number: formData.number,
+                numberOfCard: formData.numberOfCard,
                 expDate: formData.expDate,
                 cvv: formData.cvv,
+            },
+            order: {
+                name: data?.name,
+                image: data?.image,
+                price: data?.price,
             }
         }
-        localStorage.setItem('formattedData', JSON.stringify(formattedData));
-        router.push({
-            pathname: '/confirmacion-compra',
-            query: { data: JSON.stringify(formData) }
+        localStorage.setItem('formData', JSON.stringify(formattedData));
+        window.location.href = "/confirmacion-compra/";
+        
+        const res = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formattedData)
         })
+        const response = await res.json()
+        if (!response.ok) {
+            setAlertMessage(response.message)
+            setOpen(true)
+        }
     }
 
-    //TODO validaciones del form y del POST de la api devolviendo alerts
     const getStepContent = (step: number) => {
         switch (step) {
             case 0:
                 return (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        <FormControl error={errors?.name !== undefined}>
-                            <InputLabel htmlFor="name">Name</InputLabel>
-                            <Controller
-                                control={control}
-                                name="name"
-                                defaultValue="Jhon"
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.name && (
-                                <Typography variant="body2" color="error">
-                                    {errors.name.message}
-                                </Typography>
-                            )}
-                        </FormControl>
-                        <FormControl error={errors?.lastName !== undefined}>
-                            <InputLabel htmlFor="lastName">LastName</InputLabel>
-                            <Controller
-                                control={control}
-                                name="lastName"
-                                defaultValue="James"
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.lastName && (
-                                <Typography variant="body2" color="error">
-                                    {errors.lastName.message}
-                                </Typography>
-                            )}
-                        </FormControl>
-                        <FormControl error={errors?.email !== undefined}>
-                            <InputLabel htmlFor="email">Email</InputLabel>
-                            <Controller
-                                control={control}
-                                name="email"
-                                defaultValue="jhon.james@gmail.com"
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.email && (
-                                <Typography variant="body2" color="error">
-                                    {errors.email.message}
-                                </Typography>
-                            )}
-                        </FormControl>
+                        <Controller
+                            control={control}
+                            name="name"
+                            rules={{ required: 'Name is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='name'
+                                    label="Name"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
+                        <Controller
+                            control={control}
+                            name="lastName"
+                            rules={{ required: 'LastName is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='lastName'
+                                    label="LastName"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
+                        <Controller
+                            control={control}
+                            name="email"
+                            rules={{ required: 'Email is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='email'
+                                    label="Email"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
                     </Box>
                 );
             case 1:
                 return (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        <FormControl error={errors?.address !== undefined}>
-                            <InputLabel htmlFor="address">Address</InputLabel>
-                            <Controller
-                                control={control}
-                                name="address"
-                                defaultValue="4430 Erat Avenue"
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.address && (
-                                <Typography variant="body2" color="error">
-                                    {errors.address.message}
-                                </Typography>
-                            )}
-                        </FormControl>
-                        <FormControl error={errors?.apartament !== undefined}>
-                            <InputLabel htmlFor="apartament">Apartament, etc</InputLabel>
-                            <Controller
-                                control={control}
-                                name="apartament"
-                                defaultValue=""
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.apartament && (
-                                <Typography variant="body2" color="error">
-                                    {errors?.apartament.message}
-                                </Typography>
-                            )}
-                        </FormControl>
-                        <FormControl error={errors?.city !== undefined}>
-                            <InputLabel htmlFor="city">City</InputLabel>
-                            <Controller
-                                control={control}
-                                name="city"
-                                defaultValue="New York"
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.city && (
-                                <Typography variant="body2" color="error">
-                                    {errors?.city.message}
-                                </Typography>
-                            )}
-                        </FormControl>
-                        <FormControl error={errors?.state !== undefined}>
-                            <InputLabel htmlFor="address.state">Province</InputLabel>
-                            <Controller
-                                control={control}
-                                name="state"
-                                defaultValue="Brooklyn"
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.state && (
-                                <Typography variant="body2" color="error">
-                                    {errors?.state.message}
-                                </Typography>
-                            )}
-                        </FormControl>
-                        <FormControl error={errors?.zipCode !== undefined}>
-                            <InputLabel htmlFor="zipCode">ZipCode</InputLabel>
-                            <Controller
-                                control={control}
-                                name="zipCode"
-                                defaultValue={5225}
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.zipCode && (
-                                <Typography variant="body2" color="error">
-                                    {errors?.zipCode.message}
-                                </Typography>
-                            )}
-                        </FormControl>
+                        <Controller
+                            control={control}
+                            name="address"
+                            rules={{ required: 'Address is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='address'
+                                    label="Address"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
+                        <Controller
+                            control={control}
+                            name="apartament"
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='apartament'
+                                    label="Apartament"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
+                        <Controller
+                            control={control}
+                            name="city"
+                            rules={{ required: 'City is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='city'
+                                    label="City"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
+                        <Controller
+                            control={control}
+                            name="state"
+                            rules={{ required: 'State is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='state'
+                                    label="State"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
+                        <Controller
+                            control={control}
+                            name="zipCode"
+                            rules={{ required: 'ZipCode is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='zipCode'
+                                    label="Zip Code"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
                     </Box>
                 );
             case 2:
                 return (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        <FormControl error={errors?.nameOnCard !== undefined}>
-                            <InputLabel htmlFor="nameOnCard">Name as it appears on the card</InputLabel>
-                            <Controller
-                                control={control}
-                                name="nameOnCard"
-                                defaultValue="Jhon James"
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.nameOnCard && (
-                                <Typography variant="body2" color="error">
-                                    {errors?.nameOnCard.message}
-                                </Typography>
-                            )}
-                        </FormControl>
-                        <FormControl error={errors?.number !== undefined}>
-                            <InputLabel htmlFor="number">Card number</InputLabel>
-                            <Controller
-                                control={control}
-                                name="number"
-                                defaultValue={4242424242424242}
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.number && (
-                                <Typography variant="body2" color="error">
-                                    {errors?.number.message}
-                                </Typography>
-                            )}
-                        </FormControl>
-                        <FormControl error={errors?.expDate !== undefined}>
-                            <InputLabel htmlFor="expDate">Expiry Data MM/YY</InputLabel>
-                            <Controller
-                                control={control}
-                                name="expDate"
-                                defaultValue="09/25"
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.expDate && (
-                                <Typography variant="body2" color="error">
-                                    {errors?.expDate.message}
-                                </Typography>
-                            )}
-                        </FormControl>
-                        <FormControl error={errors?.cvv !== undefined}>
-                            <InputLabel htmlFor="cvv">CVV</InputLabel>
-                            <Controller
-                                control={control}
-                                name="cvv"
-                                defaultValue={123}
-                                render={({ field }) => <OutlinedInput {...field} />}
-                            />
-                            {errors?.cvv && (
-                                <Typography variant="body2" color="error">
-                                    {errors?.cvv.message}
-                                </Typography>
-                            )}
-                        </FormControl>
+                        <Controller
+                            control={control}
+                            name="nameOnCard"
+                            rules={{ required: 'NameOnCard is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='nameOnCard'
+                                    label="Name on Card"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
+                        <Controller
+                            control={control}
+                            name="numberOfCard"
+                            rules={{ required: 'NumberOfCard is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='numberOfCard'
+                                    label="NumberOfCard"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
+                        <Controller
+                            control={control}
+                            name="expDate"
+                            rules={{ required: 'ExpiryDate is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='expDate'
+                                    label="Expiry Date"
+                                    variant="outlined"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
+                        <Controller
+                            control={control}
+                            name="cvv"
+                            rules={{ required: 'cvv is required' }}
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    id='cvv'
+                                    label="CVV"
+                                    variant="outlined"
+                                    type='password'
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    error={!!fieldState?.error}
+                                    helperText={fieldState?.error?.message}
+                                />)}
+                        />
                     </Box>
                 )
             default:
                 return null;
         }
     };
+
     return (
         <FormProvider {...methods}>
             <Typography variant='h4' textAlign={'center'} margin={5} color={"#0D47A1"}>{data.name}</Typography>
             <Box component='section' sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', alignContent: 'center', margin: '2vw 10rem' }}>
-                <Box component='form' noValidate autoComplete="off" onSubmit={handleSubmit(onSubmit)} sx={{ marginX: 10 }}>
+                <Box component='form' noValidate autoComplete="off" sx={{ marginX: 10 }}>
                     <Stepper activeStep={activeStep}>
                         {steps.map((label, index) => {
                             return (
@@ -318,7 +391,13 @@ const Checkout: FC<Props> = ({ data }) => {
                         <React.Fragment>
                             <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', pt: 2 }}>
                                 <Link href={"/confirmacion-compra"}>
-                                    <Button variant='contained'>Finish</Button>
+                                    <Button 
+                                        variant='contained'
+                                        type='submit'
+                                        onClick={handleSubmit(onSubmit)}
+                                    >
+                                        Finish
+                                    </Button>
                                 </Link>
                             </Box>
                         </React.Fragment>
@@ -341,7 +420,6 @@ const Checkout: FC<Props> = ({ data }) => {
                                 <Box sx={{ flex: '1 1 auto' }} />
                                 <Button
                                     variant='contained'
-                                    type='submit'
                                     onClick={handleNext}
                                 >
                                     {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
@@ -361,6 +439,11 @@ const Checkout: FC<Props> = ({ data }) => {
                         </CardContent>
                     </Card>
                 </Box>
+                <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
+                    <Alert onClose={handleClose} severity={"error"} sx={{ width: '100%' }}>
+                        {alertMessage}
+                    </Alert>
+                </Snackbar>
             </Box>
         </FormProvider>
     )
