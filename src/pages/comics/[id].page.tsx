@@ -1,4 +1,4 @@
-import { GetStaticPaths, GetStaticProps, NextPage } from 'next';
+import { GetServerSideProps, GetStaticPaths, GetStaticProps, NextPage } from 'next';
 import Comic, { ComicProps } from 'src/components/comic/comic';
 import { getComic, getComics } from 'src/services/marvel/marvel.service';
 
@@ -15,7 +15,7 @@ const Index: NextPage<Props> = ({ data }) => {
     )
 }
 
-export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
+export const getServerSideProps: GetServerSideProps<Props> = async ({ params }) => {
     const comicId = params?.id as string;
     const comic = await getComic(parseInt(comicId, 10))
 
@@ -23,21 +23,6 @@ export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
         props: {
             data: comic,
         },
-        revalidate: 10,
-    }
-}
-
-export const getStaticPaths: GetStaticPaths = async () => {
-    const comics = await getComics();
-    const paths = comics.data.results.map((comic: any) => ({
-        params: {
-            id: `${comic.id}`
-        }
-    }))
-
-    return {
-        paths,
-        fallback: 'blocking'
     }
 }
 

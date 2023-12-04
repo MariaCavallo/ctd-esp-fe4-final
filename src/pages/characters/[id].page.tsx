@@ -1,6 +1,6 @@
 import React from 'react'
 import Characters, { CharactersProps } from 'src/components/characters/characters'
-import { GetStaticPaths, GetStaticProps, NextPage } from 'next';
+import { GetServerSideProps, GetStaticPaths, NextPage } from 'next';
 import { getCharacter, getCharacters } from 'src/services/marvel/marvel.service';
 
 interface Props {
@@ -15,7 +15,7 @@ const Index: NextPage<Props> = ({ data }) => {
     )
 }
 
-export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
+export const getServerSideProps: GetServerSideProps<Props> = async ({ params }) => {
     const characterId = params?.id as string;
     const character = await getCharacter(parseInt(characterId, 10))
 
@@ -23,21 +23,6 @@ export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
         props: {
             data: character,
         },
-        revalidate: 10
-    }
-}
-
-export const getStaticPaths: GetStaticPaths = async () => {
-    const characters = await getCharacters()
-    const paths = characters.map((characters: { id: any; }) => ({
-        params: { 
-            id: `${characters.id}`
-        }
-    }))
-
-    return {
-        paths,
-        fallback: 'blocking',
     }
 }
 
