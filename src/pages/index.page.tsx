@@ -30,8 +30,8 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
     const currentPage = query.page ? Number(query.page) : 1;
     const offset = (currentPage - 1) * ITEMS_PER_PAGE;
     const data = await getComics(offset, ITEMS_PER_PAGE);
-    const comics = data.data.results;
-    const totalComics = data.data.total;
+    const comics = data?.data?.results;
+    const totalComics = data?.data?.total;
     const totalPages = Math.ceil(totalComics / ITEMS_PER_PAGE);
 
     return {
