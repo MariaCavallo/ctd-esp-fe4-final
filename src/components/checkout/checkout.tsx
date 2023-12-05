@@ -23,7 +23,7 @@ type FormValues = {
     state: string;
     zipCode: string;
     nameOnCard: string;
-    numberOfCard: string;
+    number: string;
     expDate: string;
     cvv: string;
 }
@@ -32,22 +32,22 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
     props,
     ref,
 ) {
-    return <MuiAlert elevation={6} ref={ref} variant='outlined' {...props}/>
+    return <MuiAlert elevation={6} ref={ref} variant='filled' {...props}/>
 });
 
 const steps = ['Datos Personales', 'Dirección de entrega', 'Datos del Pago'];
 
 const schema = yup.object().shape({
-    name: yup.string().required('Name is required').max(20, 'Too long').min(3, 'Too short'),
-    lastName: yup.string().required('LastName is required').max(20, 'Too long').min(3, 'Too short'),
+    name: yup.string().required('Name is required').matches(/^[A-Za-z\s]+$/, 'Name must contain only letters and spaces').max(20, 'Too long').min(3, 'Too short'),
+    lastName: yup.string().required('LastName is required').matches(/^[A-Za-z\s]+$/, 'LastName must contain only letters and spaces').max(20, 'Too long').min(3, 'Too short'),
     email: yup.string().email('Invalid email format').required('Email is required'),
     address: yup.string().required('Address is required').max(20, 'Too long').min(3, 'Too short'),
     apartament: yup.string(),
-    city: yup.string().required('City is required').max(40, 'Too long').min(3, 'Too short'),
-    state: yup.string().required('State is required').max(40, 'Too long').min(3, 'Too short'),
+    city: yup.string().required('City is required').matches(/^[A-Za-z\s]+$/, 'City must contain only letters and spaces').max(40, 'Too long').min(3, 'Too short'),
+    state: yup.string().required('State is required').matches(/^[A-Za-z\s]+$/, 'State must contain only letters and spaces').max(40, 'Too long').min(3, 'Too short'),
     zipCode: yup.string().required('ZipCode is required').matches(/^\d+$/, 'ZipCode must be a number').min(2, 'Too short').max(8, 'Too long'),
-    nameOnCard: yup.string().required('Name on Card is required').max(40, 'Too long'),
-    numberOfCard: yup.string().required('Number of Card is required').matches(/^\d+$/, 'NumberOfCard must be a number').min(14, 'Too short').max(16, 'Too long'),
+    nameOnCard: yup.string().required('Name on Card is required').matches(/^[A-Za-z\s]+$/, 'NameOfCard must contain only letters and spaces').max(40, 'Too long'),
+    number: yup.string().required('Number of Card is required').matches(/^\d+$/, 'NumberOfCard must be a number').min(14, 'Too short').max(16, 'Too long'),
     expDate: yup.string().required('Expire Data is required').max(5, 'Too long').min(4, 'Too short'),
     cvv: yup.string().required('cvv is required').matches(/^\d+$/, 'cvv must be a number').min(2, 'Too short').max(5, 'Too long'),
 })
@@ -70,7 +70,7 @@ const Checkout: FC<Props> = ({ data }) => {
             state: "Brooklyn",
             zipCode: "5225",
             nameOnCard: "Jhon James",
-            numberOfCard: "4242424242424242",
+            number: "4242424242424242",
             expDate: "09/25",
             cvv: "123",
         },
@@ -101,7 +101,7 @@ const Checkout: FC<Props> = ({ data }) => {
             case 2:
                 isValid = await trigger([
                     "nameOnCard",
-                    "numberOfCard",
+                    "number",
                     "expDate",
                     "cvv"
                 ])
@@ -144,7 +144,7 @@ const Checkout: FC<Props> = ({ data }) => {
             },
             card: {
                 nameOnCard: formData.nameOnCard,
-                numberOfCard: formData.numberOfCard,
+                number: formData.number,
                 expDate: formData.expDate,
                 cvv: formData.cvv,
             },
@@ -154,8 +154,6 @@ const Checkout: FC<Props> = ({ data }) => {
                 price: data?.price,
             }
         }
-        localStorage.setItem('formData', JSON.stringify(formattedData));
-        window.location.href = "/confirmacion-compra/";
         
         const res = await fetch('/api/checkout', {
             method: 'POST',
@@ -165,10 +163,14 @@ const Checkout: FC<Props> = ({ data }) => {
             body: JSON.stringify(formattedData)
         })
         const response = await res.json()
+/*      console.log(response);
         if (!response.ok) {
             setAlertMessage(response.message)
             setOpen(true)
-        }
+        } else {*/
+        localStorage.setItem('formData', JSON.stringify(formattedData));
+        window.location.href = "/confirmacion-compra/";
+        // }
     }
 
     const getStepContent = (step: number) => {
@@ -322,12 +324,12 @@ const Checkout: FC<Props> = ({ data }) => {
                         />
                         <Controller
                             control={control}
-                            name="numberOfCard"
-                            rules={{ required: 'NumberOfCard is required' }}
+                            name="number"
+                            rules={{ required: 'Number is required' }}
                             render={({ field, fieldState }) => (
                                 <TextField
-                                    id='numberOfCard'
-                                    label="NumberOfCard"
+                                    id='number'
+                                    label="Number"
                                     variant="outlined"
                                     value={field.value}
                                     onChange={(e) => field.onChange(e.target.value)}
