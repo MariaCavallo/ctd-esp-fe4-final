@@ -1,4 +1,4 @@
-import { GetStaticPaths, GetStaticProps, NextPage } from 'next';
+import { GetServerSideProps, GetStaticPaths, GetStaticProps, NextPage } from 'next';
 import React from 'react'
 import Checkout from 'src/components/checkout/checkout'
 import { CheckoutInput } from 'src/features/checkout/checkout.types';
@@ -17,7 +17,7 @@ const Index: NextPage<Props> = ({ data }) => {
     )
 }
 
-export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
+export const getServerSideProps: GetServerSideProps<Props> = async ({ params }) => {
     const comicId = params?.id as string;
     const comic = await getComic(parseInt(comicId, 10));
     const data: CheckoutInput['order'] = {
@@ -30,21 +30,6 @@ export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
         props: {
             data
         },
-        revalidate: 10,
-    }
-}
-
-export const getStaticPaths: GetStaticPaths = async () => {
-    const comics = await getComics();
-    const paths = comics.data.results.map((comic: { id: number }) => ({
-        params: {
-            id: `${comic.id}`
-        }
-    }))
-
-    return {
-        paths,
-        fallback: 'blocking'
     }
 }
 
