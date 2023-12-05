@@ -43,7 +43,7 @@ const Home: NextPage<HomeProps> = ({ comicsData, totalPages, currentPages }) => 
                 />
             </Container>
             <Grid container rowSpacing={4} columnSpacing={{ xs: 1, sm: 2, md: 0 }} sx={{ display: 'flex', justifyContent: 'center'}}>
-                {comicsData.map((comic) => (
+                {comicsData && comicsData?.map((comic) => (
                     <Grid xs={12} sm={6} md={4} lg={3} key={comic.id} sx={{ margin: 1 }}>
                         <Card sx={{ width: 320, height: 350, display: "flex", flexDirection: "column", alignItems: 'center', marginBottom: "30px", border: "2px solid #1E88E5"}}>
                             <Image
