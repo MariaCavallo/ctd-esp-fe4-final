@@ -8,6 +8,9 @@ import { CheckoutInput } from 'src/features/checkout/checkout.types';
 import { Controller, FormProvider, Resolver, SubmitHandler, useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { info } from 'console';
+import { validCard } from 'src/pages/api/checkout.route';
+import { ERROR_INCORRECT_ADDRESS, ERROR_CARD_WITHOUT_FUNDS, ERROR_CARD_WITHOUT_AUTHORIZATION, ERROR_CARD_DATA_INCORRECT } from 'src/services/checkout/checkout.errors';
 
 interface Props {
     data: CheckoutInput['order'];
@@ -32,7 +35,7 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
     props,
     ref,
 ) {
-    return <MuiAlert elevation={6} ref={ref} variant='filled' {...props}/>
+    return <MuiAlert elevation={6} ref={ref} variant='filled' {...props} />
 });
 
 const steps = ['Datos Personales', 'Dirección de entrega', 'Datos del Pago'];
@@ -57,7 +60,7 @@ const Checkout: FC<Props> = ({ data }) => {
     const [activeStep, setActiveStep] = useState(0);
     const [open, setOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("")
-    
+
     const { control, handleSubmit, trigger } = useForm<FormValues>({
         resolver: yupResolver(schema) as Resolver<FormValues>,
         defaultValues: {
@@ -154,7 +157,7 @@ const Checkout: FC<Props> = ({ data }) => {
                 price: data?.price,
             }
         }
-        
+
         const res = await fetch('/api/checkout', {
             method: 'POST',
             headers: {
@@ -163,14 +166,26 @@ const Checkout: FC<Props> = ({ data }) => {
             body: JSON.stringify(formattedData)
         })
         const response = await res.json()
-/*      console.log(response);
+        console.log(response);
+
+        if (!response?.card) {
+            switch (response?.message) {
+                case ERROR_INCORRECT_ADDRESS.message:
+                case ERROR_CARD_WITHOUT_FUNDS.message:
+                case ERROR_CARD_WITHOUT_AUTHORIZATION.message:
+                case ERROR_CARD_DATA_INCORRECT.message:
+                    setOpen(true)
+                    setAlertMessage(response.message)
+                    break;
+            }
+        }
         if (!response.ok) {
             setAlertMessage(response.message)
             setOpen(true)
-        } else {*/
-        localStorage.setItem('formData', JSON.stringify(formattedData));
-        window.location.href = "/confirmacion-compra/";
-        // }
+        } else {
+            localStorage.setItem('formData', JSON.stringify(formattedData));
+            window.location.href = "/confirmacion-compra/";
+        }
     }
 
     const getStepContent = (step: number) => {
@@ -391,9 +406,16 @@ const Checkout: FC<Props> = ({ data }) => {
                     </Stepper>
                     {activeStep === steps.length ? (
                         <React.Fragment>
-                            <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', pt: 2 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', pt: 2, gap: '20px' }}>
+                                <Button
+                                    variant='outlined'
+                                    color='error'
+                                    onClick={handleBack}
+                                >
+                                    Return
+                                </Button>
                                 <Link href={"/confirmacion-compra"}>
-                                    <Button 
+                                    <Button
                                         variant='contained'
                                         type='submit'
                                         onClick={handleSubmit(onSubmit)}
