@@ -9,8 +9,8 @@ import { Controller, FormProvider, Resolver, SubmitHandler, useForm } from 'reac
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { info } from 'console';
-import { validCard } from 'src/pages/api/checkout.route';
-import { ERROR_INCORRECT_ADDRESS, ERROR_CARD_WITHOUT_FUNDS, ERROR_CARD_WITHOUT_AUTHORIZATION, ERROR_CARD_DATA_INCORRECT } from 'src/services/checkout/checkout.errors';
+import { invalidAddress, validCard, withoutAuthorizationCard, withoutFundsCard } from 'src/pages/api/checkout.route';
+import { ERROR_INCORRECT_ADDRESS, ERROR_CARD_WITHOUT_FUNDS, ERROR_CARD_WITHOUT_AUTHORIZATION, ERROR_CARD_DATA_INCORRECT, ERROR_SERVER } from 'src/services/checkout/checkout.errors';
 
 interface Props {
     data: CheckoutInput['order'];
@@ -131,6 +131,23 @@ const Checkout: FC<Props> = ({ data }) => {
         setOpen(false);
     };
 
+    const handleSnackbarOpen = (errorType: any) => {
+        setOpen(true);
+        switch (errorType) {
+            case 'CARD_WITHOUT_FUNDS':
+                setAlertMessage(ERROR_CARD_WITHOUT_FUNDS.message);
+                break;
+            case 'CARD_WITHOUT_AUTHORIZATION':
+                setAlertMessage(ERROR_CARD_WITHOUT_AUTHORIZATION.message);
+                break;
+            case 'INCORRECT_ADDRESS':
+                setAlertMessage(ERROR_INCORRECT_ADDRESS.message);
+                break;
+            default:
+                setAlertMessage(ERROR_SERVER.message);
+        }
+    };
+
     const onSubmit: SubmitHandler<FormValues> = async (formData) => {
         const formattedData = {
             customer: {
@@ -167,21 +184,10 @@ const Checkout: FC<Props> = ({ data }) => {
         })
         const response = await res.json()
         console.log(response);
+        console.log(res)
 
-        if (!response?.card) {
-            switch (response?.message) {
-                case ERROR_INCORRECT_ADDRESS.message:
-                case ERROR_CARD_WITHOUT_FUNDS.message:
-                case ERROR_CARD_WITHOUT_AUTHORIZATION.message:
-                case ERROR_CARD_DATA_INCORRECT.message:
-                    setOpen(true)
-                    setAlertMessage(response.message)
-                    break;
-            }
-        }
-        if (!response.ok) {
-            setAlertMessage(response.message)
-            setOpen(true)
+        if (response?.error) {
+            handleSnackbarOpen(response.error)
         } else {
             localStorage.setItem('formData', JSON.stringify(formattedData));
             window.location.href = "/confirmacion-compra/";
